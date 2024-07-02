@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import countries from './countries'; // Make sure you have a countries.js file exporting an array of country names
+import countries from './countries';
+import Match from './Match';
+import MatchesList from './MatchesList';
 
 const App = () => {
   const [matches, setMatches] = useState([]);
@@ -21,16 +23,18 @@ const App = () => {
       teamB,
       scoreTeamA: 0,
       scoreTeamB: 0,
-      startTime: Date.now() // Add timestamp for sorting purposes
+      startTime: Date.now()
     };
     setMatches([...matches, newMatch]);
     setTeamA('');
     setTeamB('');
   };
 
+  //update, reset matches
   const updateScore = (id) => {
+    console.log ('match status', {id})
     if (scoreTeamA < 0 || scoreTeamB < 0) {
-      setError('Score cannot be a negative');
+      setError('Scores cannot be negative');
       return;
     }
     setError('');
@@ -45,21 +49,26 @@ const App = () => {
     setScoreTeamB(0);
   };
 
-  const finishMatch = (id) => {
-    const updatedMatches = matches.filter(match => match.id !== id);
-    setMatches(updatedMatches);
-  };
-
-  // Function to sort matches by total score and then by start time
+  //compare score and arrange matches according the scores
   const getSortedMatches = () => {
     return [...matches].sort((a, b) => {
       const totalScoreA = a.scoreTeamA + a.scoreTeamB;
       const totalScoreB = b.scoreTeamA + b.scoreTeamB;
       if (totalScoreA === totalScoreB) {
-        return b.startTime - a.startTime; // Newer matches come first
+        return b.startTime - a.startTime;
       }
-      return totalScoreB - totalScoreA; // Higher total scores come first
+      return totalScoreB - totalScoreA;
     });
+  };
+
+  //reset for new series
+  const resetApp = () => {
+    setMatches([]);
+    setTeamA('');
+    setTeamB('');
+    setScoreTeamA(0);
+    setScoreTeamB(0);
+    setError('');
   };
 
   return (
@@ -68,40 +77,42 @@ const App = () => {
       <div>
         <h2>Start a new match</h2>
         {error && <p style={{ color: 'red' }}>{error}</p>}
+
         <select value={teamA} onChange={e => setTeamA(e.target.value)}>
           <option value="" disabled>Select Home Team</option>
           {countries.map(country => (
             <option key={country} value={country}>{country}</option>
           ))}
         </select>
+
         <select value={teamB} onChange={e => setTeamB(e.target.value)}>
           <option value="" disabled>Select Away Team</option>
           {countries.map(country => (
             <option key={country} value={country}>{country}</option>
           ))}
         </select>
+
         <button onClick={startMatch}>Start Match</button>
       </div>
+
       <div>
         <h2>Update Score</h2>
         {matches.map(match => (
-          <div key={match.id}>
-            <h3>{match.teamA} vs {match.teamB}</h3>
-            <input type="number" value={scoreTeamA} onChange={e => setScoreTeamA(Number(e.target.value))} placeholder='Home Score' />
-            <input type="number" value={scoreTeamB} onChange={e => setScoreTeamB(Number(e.target.value))} placeholder='Away Score' />
-            <button onClick={() => updateScore(match.id)}>Update Score</button>
-            <button onClick={() => finishMatch(match.id)}>Finish Match</button>
-          </div>
+          <Match
+            key={match.id}
+            match={match}
+            scoreTeamA={scoreTeamA}
+            scoreTeamB={scoreTeamB}
+            setScoreTeamA={setScoreTeamA}
+            setScoreTeamB={setScoreTeamB}
+            updateScore={updateScore}
+          />
         ))}
       </div>
+      
       <h2>Matches in Progress</h2>
-      <ul>
-        {getSortedMatches().map(match => (
-          <li key={match.id}>
-            {match.teamA} vs {match.teamB} - {match.scoreTeamA}:{match.scoreTeamB}
-          </li>
-        ))}
-      </ul>
+      <MatchesList matches={getSortedMatches()} />
+      <button onClick ={resetApp}>Reset</button>
     </div>
   );
 };
